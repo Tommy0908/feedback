@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生课后反馈应用</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #preview {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>学生课后反馈</h1>
+    <div class="form-section">
+        <label for="student-name">学生姓名</label>
+        <input type="text" id="student-name" placeholder="请输入学生姓名">
+    </div>
+    <div class="form-section">
+        <label for="subject">授课学科</label>
+        <input type="text" id="subject" placeholder="请输入授课学科">
+    </div>
+    <div class="form-section">
+        <label for="class-date">上课日期</label>
+        <input type="date" id="class-date" placeholder="请输入上课日期">
+    </div>
+    <div class="form-section">
+        <label for="homework">作业完成情况</label>
+        <textarea id="homework" placeholder="请输入上次课作业完成情况"></textarea>
+    </div>
+    <div class="form-section">
+        <label for="class-performance">课堂教学内容</label>
+        <textarea id="class-performance" placeholder="请输入本次课教学内容"></textarea>
+    </div>
+    <div class="form-section">
+        <label for="problems">现存问题情况</label>
+        <textarea id="problems" placeholder="请输入存在的问题（如果无，不填）"></textarea>
+    </div>
+    <div class="form-section">
+        <label for="suggestions">改进建议情况</label>
+        <textarea id="suggestions" placeholder="请输入改进建议（如果无，不填；有问题需要有学习建议。）"></textarea>
+    </div>
+    <!-- 新增两个表单字段 -->
+    <div class="form-section">
+        <label for="current-homework">本次课作业</label>
+        <textarea id="current-homework" placeholder="请输入本次课布置的作业"></textarea>
+    </div>
+    <div class="form-section">
+        <label for="next-class">下次课内容</label>
+        <textarea id="next-class" placeholder="请输入下次课计划内容"></textarea>
+    </div>
+    <!-- 在按钮后添加说明 -->
+    <button onclick="generateImage()">生成图片</button>
+    <span style="font-size:12px; color:#666; margin-left:10px;">（右键复制或长按保存）</span>
+    <div id="preview"></div>
+
+    </body>
+    <script>
+        // 将generateImage函数定义移到这里
+        function generateImage() {
+            const studentName = document.getElementById('student-name').value;
+            const subject = document.getElementById('subject').value;
+            const classDate = document.getElementById('class-date').value;
+            const homework = document.getElementById('homework').value;
+            const classPerformance = document.getElementById('class-performance').value;
+            const problems = document.getElementById('problems').value;
+            const suggestions = document.getElementById('suggestions').value;
+            // 新增两个字段
+            const currentHomework = document.getElementById('current-homework').value;
+            const nextClass = document.getElementById('next-class').value;
+
+            const content = [];
+            if (subject) content.push({ label: '授课学科：', value: subject });
+            if (classDate) content.push({ label: '上课日期：', value: classDate });
+            if (homework) content.push({ label: '作业完成：', value: homework });
+            if (classPerformance) content.push({ label: '课堂内容：', value: classPerformance });
+            if (problems) content.push({ label: '现存问题：', value: problems });
+            if (suggestions) content.push({ label: '改进建议：', value: suggestions });
+            // 新增两个条目
+            if (currentHomework) content.push({ label: '本次课作业：', value: currentHomework });
+            if (nextClass) content.push({ label: '下次课内容：', value: nextClass });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // 移动端适配参数
+            const canvasWidth = Math.min(window.innerWidth * 0.9, 400); 
+            const lineHeight = 25;
+            const title = studentName ? `${studentName}课后反馈报告` : '学生课后反馈报告';
+            const titleFont = 'bold 20px 华文中宋';
+            const labelFont = '16px 华文中宋';
+            const valueFont = '14px 华文中宋';
+            const titleColor = '#007BFF';
+            const labelColor = '#007BFF'; // 小标题保持蓝色
+            const valueColor = '#000000'; // 修改正文颜色为黑色
+
+            // 使用预设的canvasWidth作为基础宽度
+            let maxWidth = canvasWidth;  // 初始化时直接使用canvasWidth
+            
+            // 修正后的最大宽度计算（需要同时考虑文本宽度和预设宽度）
+            ctx.font = titleFont;
+            maxWidth = Math.max(ctx.measureText(title).width, maxWidth);
+
+            content.forEach(item => {
+                ctx.font = labelFont;
+                const labelWidth = ctx.measureText(item.label).width;
+                ctx.font = valueFont;
+                const valueLines = wrapText(ctx, item.value, canvasWidth - labelWidth - 40);
+                
+                // 新增：检查是否可以将标签和内容放在同一行
+                if (valueLines.length === 1) {
+                    const combinedWidth = labelWidth + ctx.measureText(valueLines[0]).width;
+                    maxWidth = Math.max(maxWidth, combinedWidth);
+                } else {
+                    valueLines.forEach(line => {
+                        maxWidth = Math.max(maxWidth, labelWidth + ctx.measureText(line).width);
+                    });
+                }
+            });
+
+            // 预留一定的边距
+            maxWidth += 20;
+
+            // 重新计算画布高度以容纳所有内容
+            // 修改画布高度计算部分
+            let totalHeight = lineHeight * 1.5 + 15; // 标题和标题与内容的间距
+            content.forEach(item => {
+                const textLines = wrapText(ctx, item.value, maxWidth - 20);
+                // 每个条目包含标签行+内容行+间距
+                totalHeight += (1 + textLines.length) * lineHeight + lineHeight; 
+            });
+
+            // 提高分辨率
+            const scale = window.devicePixelRatio || 1;
+            canvas.width = maxWidth * scale;
+            canvas.height = totalHeight * scale;
+            canvas.style.width = `${maxWidth}px`;
+            canvas.style.height = `${totalHeight}px`;
+            ctx.scale(scale, scale);
+
+            // 设置背景颜色
+            ctx.fillStyle = '#f9f9f9';
+            ctx.fillRect(0, 0, maxWidth, totalHeight);
+
+            // 绘制边框
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(10, 10, maxWidth - 20, totalHeight - 20);
+
+            // 绘制居中标题
+            ctx.font = titleFont;
+            ctx.fillStyle = titleColor;
+            const titleWidth = ctx.measureText(title).width;
+            ctx.fillText(title, (maxWidth - titleWidth) / 2, lineHeight + 20);
+
+            // 绘制内容
+            let yPos = lineHeight * 2 + 30;
+            // 修改内容绘制部分
+            content.forEach((item) => {
+                ctx.font = labelFont;
+                ctx.fillStyle = labelColor;  // 标签始终使用蓝色
+                
+                ctx.font = valueFont;
+                const valueLines = wrapText(ctx, item.value, maxWidth - 40);
+                
+                // 新增单行布局逻辑
+                if (valueLines.length === 1) {
+                    // 标签和内容同行显示（标签蓝色，内容黑色）
+                    ctx.fillText(item.label, 20, yPos);
+                    ctx.fillStyle = valueColor;  // 切换到内容颜色
+                    ctx.fillText(valueLines[0], 20 + ctx.measureText(item.label).width, yPos);
+                    yPos += lineHeight + lineHeight;
+                } else {
+                    // 多行内容保持垂直布局
+                    ctx.fillText(item.label, 20, yPos);
+                    yPos += lineHeight;
+                    
+                    ctx.fillStyle = valueColor;  // 切换到内容颜色
+                    valueLines.forEach((line, index) => {
+                        ctx.fillText(line, 20, yPos + index * lineHeight);
+                    });
+                    yPos += valueLines.length * lineHeight + lineHeight;
+                }
+                ctx.fillStyle = labelColor;  // 重置为标签颜色
+            });
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '';
+            const img = new Image();
+            img.src = canvas.toDataURL('image/png');
+            preview.appendChild(img);
+        }
+
+        function wrapText(ctx, text, maxWidth) {
+            const originalLines = text.split('\n');
+            let lines = [];
+
+            originalLines.forEach(originalLine => {
+                let currentLine = '';
+                // 中文处理：逐个字符检查
+                for (let i = 0; i < originalLine.length; i++) {
+                    const char = originalLine[i];
+                    const testLine = currentLine + char;
+                    const metrics = ctx.measureText(testLine);
+                    
+                    if (metrics.width > maxWidth) {
+                        lines.push(currentLine);
+                        currentLine = char;
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+                if (currentLine) lines.push(currentLine);
+            });
+            return lines;
+        }
+    </script>
+</body>
+
+</html>
+    
